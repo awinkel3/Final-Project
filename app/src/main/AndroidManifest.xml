@@ -12,7 +12,7 @@
         <activity
             android:name=".AddShares"
             android:label="@string/title_activity_add_shares"
-            android:theme="@style/TextAppearance.AppCompat.Display1"></activity>
+            ></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

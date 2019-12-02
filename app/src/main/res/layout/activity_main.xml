@@ -12,6 +12,7 @@
         android:orientation="vertical">
 
         <RadioGroup
+            android:id="@+id/viewSelect"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -34,7 +35,8 @@
             android:id="@+id/market"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <LinearLayout
                 android:id="@+id/marketStocks"
@@ -42,18 +44,14 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"></LinearLayout>
 
-            <Button
-                android:id="@+id/addShares"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Buy Shares" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/portfolio"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/money"

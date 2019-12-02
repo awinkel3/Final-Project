@@ -47,15 +47,5 @@
             android:hint="0"
             android:inputType="number" />
 
-        <Button
-            android:id="@+id/completeButton"
-            style="@android:style/Widget.DeviceDefault.Button.Borderless"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#6BE91E1E"
-            android:gravity="center"
-            android:text="Complete Transaction"
-            android:visibility="visible" />
-
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

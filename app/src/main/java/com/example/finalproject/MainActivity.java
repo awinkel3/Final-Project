@@ -4,22 +4,25 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     //List of stocks in the market
-    private List<Stock> market = new ArrayList<>();
+    //private List<Stock> market = new ArrayList<>();
 
+    Stock allTheStocks = new Stock(77, "COOL", "CoolCorps");
     /**
      * Map of stocks in the portfolio.
      * The key is the stock.
@@ -34,17 +37,17 @@ public class MainActivity extends AppCompatActivity {
     private int addShareAction = 0;
     private int removeShareAction = 1;
 
+    //Whatever stock was last searched for
+    private String searchedStock;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         //put Netflix inside the portfolio act as example for UI
         portfolio.put(new Stock(314.87, "NFLX", "Netflix"), 11);
-
-        //Put Twitter and Tesla in the market to act as an example for UI
-        market.add(new Stock(30.9, "TWTR", "Twitter"));
-        market.add(new Stock(329.83, "TSLA", "Tesla"));
 
 
 
@@ -70,89 +73,32 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
-
-
-        //Populate marketStocks layout (contained within marketView) with the list of market stocks
-        LinearLayout marketStocks = findViewById(R.id.marketStocks);
-        for (int i = 0; i < market.size(); i++) {
-
-            //We're dealing with the stock at index(i) in market
-            Stock currentStock = market.get(i);
-
-            //Get the chunk and its three text elements to be set
-            View stockChunk = getLayoutInflater().inflate(R.layout.chunk_stock, marketStocks, false);
-            TextView stockName = stockChunk.findViewById(R.id.stockName);
-            TextView stockCo = stockChunk.findViewById(R.id.stockCo);
-            TextView stockCost = stockChunk.findViewById(R.id.cost);
-            Button stockBuy = stockChunk.findViewById(R.id.stockBuy);
-
-            //Set three text elements to appropriate stock-related thingies
-            stockName.setText(currentStock.getName());
-            stockCo.setText(currentStock.getCompany());
-            //*It won't let me cast a double to a string so this is a work around
-            stockCost.setText("" + currentStock.getCost());
-
-            //Makes it so clicking the buy button triggers the addShares method
-            stockBuy.setOnClickListener(unused -> addShares(currentStock));
-
-            marketStocks.addView(stockChunk);
-        }
+        updateMarket();
 
         updatePortfolio();
     }
 
-    /**
-     * Invoked by the Android system when a request launched by startActivityForResult completes.
-     * @param requestCode the request code passed by to startActivityForResult
-     * @param resultCode a value indicating how the request finished (e.g. completed or canceled)
-     * @param data an Intent containing results (e.g. as a URI or in extras)
-     */
-    @Override
-    protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == addShareAction) {
-            // Do something that depends on the result of that request
-        }
 
-        if (requestCode == removeShareAction) {
+    //Makes the sell view available, which in turn will become invisible when you hit enter on the key
+    private void sellButtonPressed (Stock stock, EditText sellNum) {
+        sellNum.setVisibility(View.VISIBLE);
 
-        }
-    }
+        //Set search to nothing, so it doesn't stay the same between sell actions
+        sellNum.setText("");
 
-    //Launches the addShares activity
-    private void addShares (Stock stock) {
-        Intent intent = new Intent(this, AddShares.class);
+        //Tells the program what to do when the enter key is pressed on the keyboard
+        TextView.OnEditorActionListener sellUsed = new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                //////////////////////////////////////////////////////////////////////////////////
+                //Add some kind of function to deal with the sell action internally
 
-        //I was an idiot and called the class AddShares, but it should be able to add or subtract shares
-        //The type should tell the program which one to do
-        intent.putExtra("type", "add");
+                sellNum.setVisibility(View.GONE);
+                return true;
+            }
+        };
 
-        //Sends the info about the stock that will be used to set up the addShares screen
-        intent.putExtra("name", stock.getName());
-        intent.putExtra("company", stock.getCompany());
-        intent.putExtra("cost", stock.getCost());
-
-        startActivityForResult(intent,addShareAction);
-
-        //I don't think we finish so then the player can go back?
-    }
-
-
-    //Launches the addShares activity (but with the remove type so stocks are removed from the portfolio)
-    private void removeShares (Stock stock) {
-        Intent intent = new Intent(this, AddShares.class);
-
-        //I was an idiot and called the class AddShares, but it should be able to add or subtract shares
-        //The type should tell the program which one to do
-        intent.putExtra("type", "remove");
-
-        //Sends the info about the stock that will be used to set up the addShares screen
-        intent.putExtra("name", stock.getName());
-        intent.putExtra("company", stock.getCompany());
-        intent.putExtra("cost", stock.getCost());
-
-        startActivityForResult(intent,removeShareAction);
+        sellNum.setOnEditorActionListener(sellUsed);
     }
 
     //Method for updating the user's portfolio
@@ -172,7 +118,11 @@ public class MainActivity extends AppCompatActivity {
             TextView stockCo = stockChunk.findViewById(R.id.stockCo);
             TextView stockCost = stockChunk.findViewById(R.id.cost);
             TextView stockNum = stockChunk.findViewById(R.id.number);
-            Button stockSell = stockChunk.findViewById(R.id.stockSell);
+            Button stockSell = stockChunk.findViewById(R.id.sellButton);
+
+            EditText sellNum = stockChunk.findViewById(R.id.sellNum);
+
+            sellNum.setVisibility(View.GONE);
 
             //Set three text elements to appropriate stock-related thingies
             stockName.setText(currentStock.getName());
@@ -184,10 +134,117 @@ public class MainActivity extends AppCompatActivity {
             stockNum.setText("" + entry.getValue());
 
             //Makes it so clicking the buy button triggers the addShares method
-            stockSell.setOnClickListener(unused -> removeShares(currentStock));
+            stockSell.setOnClickListener(unused -> sellButtonPressed(currentStock, sellNum));
 
             portStocks.addView(stockChunk);
         }
 
+    }
+
+    private void updateMarket() {
+        EditText search = findViewById(R.id.search);
+        TextView cost = findViewById(R.id.currentValue);
+        TextView currentValue = findViewById(R.id.marketStockCost);
+        EditText stockNumber = findViewById(R.id.stockNum);
+        TextView stockName = findViewById(R.id.stockName);
+        TextView stockCompany = findViewById(R.id.stockCo);
+
+        LinearLayout afterSearch = findViewById(R.id.afterSearch);
+
+        cost.setText("0");
+
+        afterSearch.setVisibility(View.GONE);
+
+
+        //Tells the program what to do when the enter key is pressed on the keyboard
+        TextView.OnEditorActionListener searchUsed = new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                searchedStock = textView.getText().toString();
+                //If the searched stock is in the API, then:
+                if (textView.getText().toString().equals(allTheStocks.getName())) {
+                    //Make the afterSearch view visible
+                    //Set the afterSearch parameters to the stock's parameters
+                    afterSearch.setVisibility(View.VISIBLE);
+                    //Current value needs to be set to the stock's current value
+                    currentValue.setText("" + allTheStocks.getCost());
+
+
+                    ////////////////////////////////////////////////////////////////////////////////////////////////
+                    //REFERENCES allTheStocks explicitly -- fix that
+
+                    //Name set to stock's ticker
+                    stockName.setText(allTheStocks.getName());
+                    //Company set to stock's company
+                    stockCompany.setText((allTheStocks.getCompany()));
+                    //Set cost to nothing, so if you bought 111 stocks last time 111 isn't still in the search bar
+                    stockNumber.setText("");
+                } else {
+                    //If the stock is not part of the API, make afterSearch dissappear
+                    afterSearch.setVisibility(View.GONE);
+                }
+                return true;
+            }
+        };
+
+        //When you hit enter on the search, the above action ensues
+        search.setOnEditorActionListener(searchUsed);
+
+        //Tells program what to do when text changes in shareNum
+        TextWatcher costChange = new TextWatcher() {
+            boolean lengthZero;
+
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int before, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                lengthZero = charSequence.length() == 0;
+            }
+
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                int newAmount;
+                String negative = "";
+                if (lengthZero) {
+                    newAmount = 0;
+                } else {
+                    newAmount = Integer.parseInt(editable.toString());
+                }
+
+                //Makes it so there's a negative sign if you are BUYING stocks and your cost is not zero
+                if (newAmount > 0) {
+                    negative = "-";
+                }
+
+                ///////////////////////////////////////////////////////////////////////////////////////////////////
+                //REFERENCES allTheStocks explicitly -- change that
+                cost.setText(negative + (newAmount * allTheStocks.getCost()));
+            }
+        };
+
+        stockNumber.addTextChangedListener(costChange);
+
+        TextView.OnEditorActionListener endTransaction = new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+
+
+                //ADD A HELPER FUNCTION HERE TO ENACT CHANGES TO LOCAL VARIABLES AFTER TRANSACTION
+
+
+                afterSearch.setVisibility(View.GONE);
+                return true;
+            }
+        };
+
+        stockNumber.setOnEditorActionListener(endTransaction);
+    }
+
+
+    private void onBuy() {
+        ;
     }
 }

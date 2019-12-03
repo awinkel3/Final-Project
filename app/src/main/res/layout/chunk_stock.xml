@@ -6,7 +6,7 @@
 
     <LinearLayout
         android:id="@+id/stockInfo"
-        android:layout_width="238dp"
+        android:layout_width="164dp"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
@@ -22,15 +22,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Company" />
+
     </LinearLayout>
 
     <TextView
-        android:id="@+id/cost"
-        android:layout_width="77dp"
+        android:id="@+id/currentValue"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="cost"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+        android:text="currentValue"
+        android:textSize="18sp" />
 
     <Button
         android:id="@+id/stockBuy"

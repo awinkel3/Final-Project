@@ -33,7 +33,7 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/totalCost"
+            android:id="@+id/totalCost0"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="cost"

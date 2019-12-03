@@ -2,7 +2,6 @@ package com.example.finalproject;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -116,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
             View stockChunk = getLayoutInflater().inflate(R.layout.chunk_portfolio_stock, portStocks, false);
             TextView stockName = stockChunk.findViewById(R.id.stockName);
             TextView stockCo = stockChunk.findViewById(R.id.stockCo);
-            TextView stockCost = stockChunk.findViewById(R.id.cost);
+            TextView stockCost = stockChunk.findViewById(R.id.pricePerShare);
             TextView stockNum = stockChunk.findViewById(R.id.number);
             Button stockSell = stockChunk.findViewById(R.id.sellButton);
 

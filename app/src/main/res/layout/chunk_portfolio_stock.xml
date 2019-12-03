@@ -30,11 +30,11 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/cost"
+            android:id="@+id/pricePerShare"
             android:layout_width="77dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="cost"
+            android:text="PPS"
             android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
         <TextView

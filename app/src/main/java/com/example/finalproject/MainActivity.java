@@ -12,16 +12,31 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import yahoofinance.Stock;
+import yahoofinance.YahooFinance;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    public MainActivity() throws IOException {
+    }
 
     //List of stocks in the market
     //private List<Stock> market = new ArrayList<>();
 
-    Stock allTheStocks = new Stock(77, "COOL", "CoolCorps");
+
+    public Stock getStock(String ticker) throws IOException {
+
+        try {
+            return YahooFinance.get(ticker);
+
+        } catch (IOException e) {
+            throw new IOException();
+        }
+    }
+    Stock currentStock;
     /**
      * Map of stocks in the portfolio.
      * The key is the stock.
@@ -46,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         //put Netflix inside the portfolio act as example for UI
-        portfolio.put(new Stock(314.87, "NFLX", "Netflix"), 11);
+        //portfolio.put(new Stock(314.87, "NFLX", "Netflix"), 11);
 
 
 
@@ -124,10 +139,11 @@ public class MainActivity extends AppCompatActivity {
             sellNum.setVisibility(View.GONE);
 
             //Set three text elements to appropriate stock-related thingies
-            stockName.setText(currentStock.getName());
-            stockCo.setText(currentStock.getCompany());
+            stockName.setText(currentStock.getSymbol());
+            stockCo.setText(currentStock.getName());
             //*It won't let me cast a double to a string so this is a work around
-            stockCost.setText("" + currentStock.getCost());
+            final double currentUpdatedStockPrice = currentStock.getQuote().getPrice().doubleValue();
+            stockCost.setText("" + currentUpdatedStockPrice);
 
             //Sets the number paramter to the number of the stock the user owns (the value of the list)
             stockNum.setText("" + entry.getValue());
@@ -159,23 +175,34 @@ public class MainActivity extends AppCompatActivity {
         TextView.OnEditorActionListener searchUsed = new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+
+                try {
+                    currentStock = getStock(textView.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
                 searchedStock = textView.getText().toString();
                 //If the searched stock is in the API, then:
-                if (textView.getText().toString().equals(allTheStocks.getName())) {
+                if (textView.getText().toString().equals(currentStock.getName())) {
                     //Make the afterSearch view visible
                     //Set the afterSearch parameters to the stock's parameters
                     afterSearch.setVisibility(View.VISIBLE);
                     //Current value needs to be set to the stock's current value
-                    currentValue.setText("" + allTheStocks.getCost());
+                    try {
+                        currentValue.setText("" + currentStock.getQuote(true).getPrice().doubleValue());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
 
                     ////////////////////////////////////////////////////////////////////////////////////////////////
-                    //REFERENCES allTheStocks explicitly -- fix that
+                    //REFERENCES currentStock explicitly -- fix that
 
                     //Name set to stock's ticker
-                    stockName.setText(allTheStocks.getName());
+                    stockName.setText(currentStock.getSymbol());
                     //Company set to stock's company
-                    stockCompany.setText((allTheStocks.getCompany()));
+                    stockCompany.setText((currentStock.getName()));
                     //Set cost to nothing, so if you bought 111 stocks last time 111 isn't still in the search bar
                     stockNumber.setText("");
                 } else {
@@ -219,8 +246,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 ///////////////////////////////////////////////////////////////////////////////////////////////////
-                //REFERENCES allTheStocks explicitly -- change that
-                cost.setText(negative + (newAmount * allTheStocks.getCost()));
+                //REFERENCES currentStock explicitly -- change that
+                cost.setText(negative + (newAmount * currentStock.getQuote().getPrice().doubleValue()));
             }
         };
 

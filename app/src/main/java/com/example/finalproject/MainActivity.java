@@ -27,15 +27,6 @@ public class MainActivity extends AppCompatActivity {
     //private List<Stock> market = new ArrayList<>();
 
 
-    public Stock getStock(String ticker) throws IOException {
-
-        try {
-            return YahooFinance.get(ticker);
-
-        } catch (IOException e) {
-            throw new IOException();
-        }
-    }
     Stock currentStock;
     /**
      * Map of stocks in the portfolio.
@@ -139,10 +130,10 @@ public class MainActivity extends AppCompatActivity {
             sellNum.setVisibility(View.GONE);
 
             //Set three text elements to appropriate stock-related thingies
-            stockName.setText(currentStock.getSymbol());
-            stockCo.setText(currentStock.getName());
+            stockName.setText(APIFuncs.getSymbol(currentStock));
+            stockCo.setText(APIFuncs.getName(currentStock));
             //*It won't let me cast a double to a string so this is a work around
-            final double currentUpdatedStockPrice = currentStock.getQuote().getPrice().doubleValue();
+            final double currentUpdatedStockPrice = APIFuncs.getCost(currentStock);
             stockCost.setText("" + currentUpdatedStockPrice);
 
             //Sets the number paramter to the number of the stock the user owns (the value of the list)
@@ -177,20 +168,20 @@ public class MainActivity extends AppCompatActivity {
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
 
                 try {
-                    currentStock = getStock(textView.toString());
+                    currentStock = APIFuncs.getStock(textView.toString());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
                 searchedStock = textView.getText().toString();
                 //If the searched stock is in the API, then:
-                if (textView.getText().toString().equals(currentStock.getName())) {
+                if (textView.getText().toString().equals(APIFuncs.getName(currentStock))) {
                     //Make the afterSearch view visible
                     //Set the afterSearch parameters to the stock's parameters
                     afterSearch.setVisibility(View.VISIBLE);
                     //Current value needs to be set to the stock's current value
                     try {
-                        currentValue.setText("" + currentStock.getQuote(true).getPrice().doubleValue());
+                        currentValue.setText("" + APIFuncs.getCurrentValue(currentStock));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -200,9 +191,9 @@ public class MainActivity extends AppCompatActivity {
                     //REFERENCES currentStock explicitly -- fix that
 
                     //Name set to stock's ticker
-                    stockName.setText(currentStock.getSymbol());
+                    stockName.setText(APIFuncs.getSymbol(currentStock));
                     //Company set to stock's company
-                    stockCompany.setText((currentStock.getName()));
+                    stockCompany.setText((APIFuncs.getName(currentStock)));
                     //Set cost to nothing, so if you bought 111 stocks last time 111 isn't still in the search bar
                     stockNumber.setText("");
                 } else {
@@ -247,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
 
                 ///////////////////////////////////////////////////////////////////////////////////////////////////
                 //REFERENCES currentStock explicitly -- change that
-                cost.setText(negative + (newAmount * currentStock.getQuote().getPrice().doubleValue()));
+                cost.setText(negative + (newAmount * APIFuncs.getCost(currentStock)));
             }
         };
 

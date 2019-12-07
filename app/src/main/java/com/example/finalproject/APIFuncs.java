@@ -1,4 +1,6 @@
 package com.example.finalproject;
+import android.os.AsyncTask;
+
 import java.io.IOException;
 
 import yahoofinance.Stock;
@@ -13,10 +15,12 @@ public class APIFuncs {
             return YahooFinance.get(ticker);
 
         } catch (IOException e) {
-            throw new IOException();
+            return null;
         }
     }
     public static double getCost(Stock stock) {
+
+
         initialCost = stock.getQuote().getPrice().doubleValue();
         return initialCost;
     }
@@ -31,6 +35,8 @@ public class APIFuncs {
     }
 
     public static String getName(Stock stock) {
+
+
         return stock.getName();
     }
     /// stock.getSymbol() returns the ticker (ie 4 character thing )

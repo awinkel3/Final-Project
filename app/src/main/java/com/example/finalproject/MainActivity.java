@@ -1,10 +1,16 @@
 package com.example.finalproject;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     //List of stocks in the market
     //private List<Stock> market = new ArrayList<>();
 
+    MainActivity main = this;
 
     Stock currentStock;
     /**
@@ -45,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
     //Whatever stock was last searched for
     private String searchedStock;
 
+
+    private boolean hasInternetPermission;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,8 +64,12 @@ public class MainActivity extends AppCompatActivity {
         //put Netflix inside the portfolio act as example for UI
         //portfolio.put(new Stock(314.87, "NFLX", "Netflix"), 11);
 
-
-
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+            // If permission isn't already granted, start a request
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.INTERNET}, 0);
+            // The result will be delivered to the onRequestPermissionsResult function
+        }
 
         //Allow for the switching between portfolio view and market view
         RadioGroup modeGroup;
@@ -167,39 +181,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
 
-                try {
-                    currentStock = APIFuncs.getStock(textView.toString());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
 
                 searchedStock = textView.getText().toString();
-                //If the searched stock is in the API, then:
-                if (textView.getText().toString().equals(APIFuncs.getName(currentStock))) {
-                    //Make the afterSearch view visible
-                    //Set the afterSearch parameters to the stock's parameters
-                    afterSearch.setVisibility(View.VISIBLE);
-                    //Current value needs to be set to the stock's current value
-                    try {
-                        currentValue.setText("" + APIFuncs.getCurrentValue(currentStock));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
 
+                //Performs a background method that will eventually change the current stock
+                //And reveal the buy chunk thing using MainActivity's setCurrentStock()
+                //and setBuyStockText() functions
+                new GetStock(main).execute(searchedStock);
 
-                    ////////////////////////////////////////////////////////////////////////////////////////////////
-                    //REFERENCES currentStock explicitly -- fix that
-
-                    //Name set to stock's ticker
-                    stockName.setText(APIFuncs.getSymbol(currentStock));
-                    //Company set to stock's company
-                    stockCompany.setText((APIFuncs.getName(currentStock)));
-                    //Set cost to nothing, so if you bought 111 stocks last time 111 isn't still in the search bar
-                    stockNumber.setText("");
-                } else {
-                    //If the stock is not part of the API, make afterSearch dissappear
-                    afterSearch.setVisibility(View.GONE);
-                }
                 return true;
             }
         };
@@ -261,7 +250,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void onBuy() {
-        ;
+    public void setBuyStockText() {
+        TextView currentValue = findViewById(R.id.marketStockCost);
+        EditText stockNumber = findViewById(R.id.stockNum);
+        TextView stockName = findViewById(R.id.stockName);
+        TextView stockCompany = findViewById(R.id.stockCo);
+
+        LinearLayout afterSearch = findViewById(R.id.afterSearch);
+
+        if (currentStock == null || currentStock.getQuote().getPrice() == null) {
+            System.out.println("Stock is null");
+            afterSearch.setVisibility(View.GONE);
+            return;
+        }
+
+        afterSearch.setVisibility(View.VISIBLE);
+        //Current value needs to be set to the stock's current value
+        //try {
+        currentValue.setText("" + APIFuncs.getCost(currentStock));
+        //} catch (IOException e) {
+        //e.printStackTrace();
+        //}
+
+
+        //Performs GetStockInfo in the background
+        //This class will then manually set the proper text with
+        //The SetBuyStockText function below
+        //new GetStockInfo().doInBackground(currentStock);
+
+        //Name set to stock's ticker
+        stockName.setText(APIFuncs.getSymbol(currentStock));
+        //Company set to stock's company
+        stockCompany.setText((APIFuncs.getName(currentStock)));
+        //Set cost to nothing, so if you bought 111 stocks last time 111 isn't still in the search bar
+        stockNumber.setText("");
+
     }
+
+    //Used by GetStock class to update current stock
+    void setCurrentStock(Stock stock) {
+        currentStock = stock;
+    }
+
 }

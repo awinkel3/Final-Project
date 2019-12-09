@@ -35,6 +35,11 @@ public class MainActivity extends AppCompatActivity {
     MainActivity main = this;
 
     Stock currentStock;
+
+    //This isn't really clean code
+    //Basically this will be manually changed multiple times in the sell version of GetStock
+    //I should have a function that does this, but with the current code this kinda messy way is easiest
+    Stock CurrentPortStock;
     /**
      * Map of stocks in the portfolio.
      * The key is the stock.
@@ -52,8 +57,18 @@ public class MainActivity extends AppCompatActivity {
     //Whatever stock was last searched for
     private String searchedStock;
 
+    //CODES AND GETTERS FOR USE IN GETSTOCK
+    private int sellCode = 0;
+        int getSellCode() {return sellCode;}
+
+
+    private int buyCode = 1;
+        int getBuyCode() {return buyCode;}
+    //////////////
 
     private boolean hasInternetPermission;
+
+    private double money = 10000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,13 +138,17 @@ public class MainActivity extends AppCompatActivity {
     //Method for updating the user's portfolio
     private void updatePortfolio() {
         LinearLayout portStocks = findViewById(R.id.portStocks);
+        portStocks.removeAllViews();
         for (Map.Entry<Stock, Integer> entry : portfolio.entrySet()) {
             // The type names in the angle brackets should match the types in the map
             // The current key is entry.getKey()
             // The current value is entry.getValue()
             // Do something with the key and value?
             //We're dealing with the stock at index(i) in market
-            Stock currentStock = entry.getKey();
+
+            //Finds the stock for the String in the map
+            //Then sets it to portfolioIterator
+            Stock portfolioIterator = entry.getKey();
 
             //Get the chunk and its three text elements to be set
             View stockChunk = getLayoutInflater().inflate(R.layout.chunk_portfolio_stock, portStocks, false);
@@ -144,17 +163,17 @@ public class MainActivity extends AppCompatActivity {
             sellNum.setVisibility(View.GONE);
 
             //Set three text elements to appropriate stock-related thingies
-            stockName.setText(APIFuncs.getSymbol(currentStock));
-            stockCo.setText(APIFuncs.getName(currentStock));
+            stockName.setText(APIFuncs.getSymbol(portfolioIterator));
+            stockCo.setText(APIFuncs.getName(portfolioIterator));
             //*It won't let me cast a double to a string so this is a work around
-            final double currentUpdatedStockPrice = APIFuncs.getCost(currentStock);
+            final double currentUpdatedStockPrice = APIFuncs.getCost(portfolioIterator);
             stockCost.setText("" + currentUpdatedStockPrice);
 
             //Sets the number paramter to the number of the stock the user owns (the value of the list)
             stockNum.setText("" + entry.getValue());
 
             //Makes it so clicking the buy button triggers the addShares method
-            stockSell.setOnClickListener(unused -> sellButtonPressed(currentStock, sellNum));
+            stockSell.setOnClickListener(unused -> sellButtonPressed(portfolioIterator, sellNum));
 
             portStocks.addView(stockChunk);
         }
@@ -187,7 +206,13 @@ public class MainActivity extends AppCompatActivity {
                 //Performs a background method that will eventually change the current stock
                 //And reveal the buy chunk thing using MainActivity's setCurrentStock()
                 //and setBuyStockText() functions
-                new GetStock(main).execute(searchedStock);
+
+
+                //A:ALSKDJALSKDJLASKJDLAKSJDLAKSJDLAKSJDLAKSJDLKAJDLKAJSLDKJ
+                //        IMPLEMENT BUY/Sell codes in GetStock
+                //        Make it so portfolio iterates through map of strings and gets each one's prive
+                //        individually'
+                new GetStock(main, buyCode).execute(searchedStock);
 
                 return true;
             }
@@ -238,10 +263,13 @@ public class MainActivity extends AppCompatActivity {
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
 
 
-                //ADD A HELPER FUNCTION HERE TO ENACT CHANGES TO LOCAL VARIABLES AFTER TRANSACTION
-
-
-                afterSearch.setVisibility(View.GONE);
+                //This function "sell action" handles all of the game-type logic
+                //Then returns based on whether you have enough money to perform the action
+                //If you do then after search dissapears
+                //Otherwise it just sticks around awkwardly and waits for you to enter a valid number
+                if (sellAction(Integer.parseInt(textView.getText().toString()))) {
+                    afterSearch.setVisibility(View.GONE);
+                }
                 return true;
             }
         };
@@ -273,11 +301,6 @@ public class MainActivity extends AppCompatActivity {
         //}
 
 
-        //Performs GetStockInfo in the background
-        //This class will then manually set the proper text with
-        //The SetBuyStockText function below
-        //new GetStockInfo().doInBackground(currentStock);
-
         //Name set to stock's ticker
         stockName.setText(APIFuncs.getSymbol(currentStock));
         //Company set to stock's company
@@ -290,6 +313,37 @@ public class MainActivity extends AppCompatActivity {
     //Used by GetStock class to update current stock
     void setCurrentStock(Stock stock) {
         currentStock = stock;
+    }
+
+    //Used by GetStock to update portfolioIterator when filling in the portfolio
+    void setCurrentPortStock (Stock stock) {
+        CurrentPortStock = stock;
+    }
+
+    //The effect to the game's internal logic after a sell action is used
+    private boolean sellAction(int numberPurchased) {
+        double cost = APIFuncs.getCost(currentStock) * numberPurchased;
+        //Only perform if you can afford it
+        if (money - cost >= 0) {
+            money = money - cost;
+            //Set portfolio
+            new GetStock(this, sellCode).execute();
+            //If the stock is already in the portfoliod
+
+
+            if (portfolio.containsKey(CurrentPortStock) {
+                //Add number purchased to the number you already have
+                portfolio.put(currentStock, portfolio.get(currentStock) + numberPurchased);
+            } else {
+                //Otherwise just put the stock in with the number purchased
+                portfolio.put(currentStock, numberPurchased);
+            }
+
+            updatePortfolio();
+            return true;
+        }
+
+        return false;
     }
 
 }

@@ -10,9 +10,11 @@ import yahoofinance.YahooFinance;
 public class GetStock extends AsyncTask<String, String, Stock> {
 
     private MainActivity main;
+    private int code;
 
-    GetStock(MainActivity startMain) {
+    GetStock(MainActivity startMain, int startCode) {
         main = startMain;
+        code = startCode;
     }
     @Override
     protected void onPreExecute() {
@@ -50,7 +52,13 @@ public class GetStock extends AsyncTask<String, String, Stock> {
 
     protected void onPostExecute(Stock result) {
         //Show the result obtained from doInBackground
-        main.setCurrentStock(result);
-        main.setBuyStockText();
+        if (code == main.getBuyCode()) {
+            main.setCurrentStock(result);
+            main.setBuyStockText();
+        }
+        //Set portfolio Iterator
+        if (code == main.getSellCode()) {
+            main.setPortfolioIterator(result);
+        }
     }
 }

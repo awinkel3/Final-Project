@@ -18,6 +18,9 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+
+import org.w3c.dom.Text;
+
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 
@@ -35,17 +38,12 @@ public class MainActivity extends AppCompatActivity {
     MainActivity main = this;
 
     Stock currentStock;
-
-    //This isn't really clean code
-    //Basically this will be manually changed multiple times in the sell version of GetStock
-    //I should have a function that does this, but with the current code this kinda messy way is easiest
-    Stock CurrentPortStock;
     /**
      * Map of stocks in the portfolio.
      * The key is the stock.
      * The value is the number of that stock the user owns.
      */
-    private Map<Stock, Integer> portfolio = new HashMap<>();
+    private Map<String, Integer> portfolio = new HashMap<>();
 
     //This is the currently selected stock
     private Stock selectedStock = null;
@@ -120,64 +118,22 @@ public class MainActivity extends AppCompatActivity {
         //Set search to nothing, so it doesn't stay the same between sell actions
         sellNum.setText("");
 
-        //Tells the program what to do when the enter key is pressed on the keyboard
-        TextView.OnEditorActionListener sellUsed = new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-                //////////////////////////////////////////////////////////////////////////////////
-                //Add some kind of function to deal with the sell action internally
 
-                sellNum.setVisibility(View.GONE);
-                return true;
-            }
-        };
-
-        sellNum.setOnEditorActionListener(sellUsed);
     }
 
     //Method for updating the user's portfolio
     private void updatePortfolio() {
         LinearLayout portStocks = findViewById(R.id.portStocks);
+        TextView moneyView = findViewById(R.id.money);
         portStocks.removeAllViews();
-        for (Map.Entry<Stock, Integer> entry : portfolio.entrySet()) {
-            // The type names in the angle brackets should match the types in the map
-            // The current key is entry.getKey()
-            // The current value is entry.getValue()
-            // Do something with the key and value?
-            //We're dealing with the stock at index(i) in market
-
-            //Finds the stock for the String in the map
-            //Then sets it to portfolioIterator
-            Stock portfolioIterator = entry.getKey();
-
-            //Get the chunk and its three text elements to be set
-            View stockChunk = getLayoutInflater().inflate(R.layout.chunk_portfolio_stock, portStocks, false);
-            TextView stockName = stockChunk.findViewById(R.id.stockName);
-            TextView stockCo = stockChunk.findViewById(R.id.stockCo);
-            TextView stockCost = stockChunk.findViewById(R.id.pricePerShare);
-            TextView stockNum = stockChunk.findViewById(R.id.number);
-            Button stockSell = stockChunk.findViewById(R.id.sellButton);
-
-            EditText sellNum = stockChunk.findViewById(R.id.sellNum);
-
-            sellNum.setVisibility(View.GONE);
-
+        for (Map.Entry<String, Integer> entry : portfolio.entrySet()) {
+            //This is the portfolio version of GetStock, (uses sellCode and includes the number bought in constructor)
+            //This function is responsible for inflating the portfolio layout at this point
+            new GetStock(this, sellCode, entry.getValue()).execute(entry.getKey());
             //Set three text elements to appropriate stock-related thingies
-            stockName.setText(APIFuncs.getSymbol(portfolioIterator));
-            stockCo.setText(APIFuncs.getName(portfolioIterator));
-            //*It won't let me cast a double to a string so this is a work around
-            final double currentUpdatedStockPrice = APIFuncs.getCost(portfolioIterator);
-            stockCost.setText("" + currentUpdatedStockPrice);
-
-            //Sets the number paramter to the number of the stock the user owns (the value of the list)
-            stockNum.setText("" + entry.getValue());
-
-            //Makes it so clicking the buy button triggers the addShares method
-            stockSell.setOnClickListener(unused -> sellButtonPressed(portfolioIterator, sellNum));
-
-            portStocks.addView(stockChunk);
         }
 
+        moneyView.setText("$" + money);
     }
 
     private void updateMarket() {
@@ -263,11 +219,11 @@ public class MainActivity extends AppCompatActivity {
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
 
 
-                //This function "sell action" handles all of the game-type logic
+                //This function "buyAction" handles all of the game-type logic
                 //Then returns based on whether you have enough money to perform the action
                 //If you do then after search dissapears
                 //Otherwise it just sticks around awkwardly and waits for you to enter a valid number
-                if (sellAction(Integer.parseInt(textView.getText().toString()))) {
+                if (buyAction(Integer.parseInt(textView.getText().toString()))) {
                     afterSearch.setVisibility(View.GONE);
                 }
                 return true;
@@ -315,28 +271,22 @@ public class MainActivity extends AppCompatActivity {
         currentStock = stock;
     }
 
-    //Used by GetStock to update portfolioIterator when filling in the portfolio
-    void setCurrentPortStock (Stock stock) {
-        CurrentPortStock = stock;
-    }
 
     //The effect to the game's internal logic after a sell action is used
-    private boolean sellAction(int numberPurchased) {
+    private boolean buyAction(int numberPurchased) {
         double cost = APIFuncs.getCost(currentStock) * numberPurchased;
         //Only perform if you can afford it
         if (money - cost >= 0) {
             money = money - cost;
-            //Set portfolio
-            new GetStock(this, sellCode).execute();
             //If the stock is already in the portfoliod
 
 
-            if (portfolio.containsKey(CurrentPortStock) {
+            if (portfolio.containsKey(currentStock.getSymbol())) {
                 //Add number purchased to the number you already have
-                portfolio.put(currentStock, portfolio.get(currentStock) + numberPurchased);
+                portfolio.put(currentStock.getSymbol(), portfolio.get(currentStock.getSymbol()) + numberPurchased);
             } else {
                 //Otherwise just put the stock in with the number purchased
-                portfolio.put(currentStock, numberPurchased);
+                portfolio.put(currentStock.getSymbol(), numberPurchased);
             }
 
             updatePortfolio();
@@ -344,6 +294,74 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return false;
+    }
+
+    private boolean sellAction(Stock toBeSold, int numberSold) {
+        String symbol = toBeSold.getSymbol();
+        if (portfolio.containsKey(symbol) && numberSold <= portfolio.get(symbol)) {
+            double gain = APIFuncs.getCost(toBeSold) * numberSold;
+            money += gain;
+
+            if (portfolio.get(symbol) - numberSold == 0) {
+                portfolio.remove(symbol);
+            } else {
+                portfolio.put(symbol, portfolio.get(symbol) - numberSold);
+            }
+
+            updatePortfolio();
+            return true;
+        }
+
+        return false;
+    }
+
+    //Function responsible for inflating portStocks, used by GetStock
+    void inflatePortStocks(Stock currentPortStock, int number) {
+        LinearLayout portStocks = findViewById(R.id.portStocks);
+        View stockChunk = getLayoutInflater().inflate(R.layout.chunk_portfolio_stock, portStocks, false);
+        TextView stockName = stockChunk.findViewById(R.id.stockName);
+        TextView stockCo = stockChunk.findViewById(R.id.stockCo);
+        TextView stockTotal = stockChunk.findViewById(R.id.currentValue);
+        TextView stockNum = stockChunk.findViewById(R.id.number);
+        TextView stockPPS = stockChunk.findViewById(R.id.pricePerShare);
+        Button stockSell = stockChunk.findViewById(R.id.sellButton);
+
+        EditText sellNum = stockChunk.findViewById(R.id.sellNum);
+
+        sellNum.setVisibility(View.GONE);
+        //Makes it so clicking the buy button triggers the addShares method
+        stockSell.setOnClickListener(unused -> sellButtonPressed(currentPortStock, sellNum));
+
+
+        stockName.setText(APIFuncs.getSymbol(currentPortStock));
+        stockCo.setText(APIFuncs.getName(currentPortStock));
+        //*It won't let me cast a double to a string so this is a work around
+        final double currentUpdatedStockPrice = APIFuncs.getCost(currentPortStock);
+        stockTotal.setText(String.format("%.2f", currentUpdatedStockPrice * number));
+        stockPPS.setText("" + currentUpdatedStockPrice);
+
+        //Sets the number paramter to the number of the stock the user owns (the value of the list)
+        stockNum.setText("" + number);
+
+        portStocks.addView(stockChunk);
+
+        //Tells the program what to do when the enter key is pressed on the keyboard
+        TextView.OnEditorActionListener sellUsed = new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                //////////////////////////////////////////////////////////////////////////////////
+                //Add some kind of function to deal with the sell action internally
+                if (sellNum.getText().toString().equals("") || sellNum.getText().toString() == null) {
+                    return false;
+                }
+                if (sellAction(currentPortStock, Integer.parseInt(sellNum.getText().toString()))) {
+                    sellNum.setVisibility(View.GONE);
+                }
+                return true;
+            }
+        };
+
+        sellNum.setOnEditorActionListener(sellUsed);
     }
 
 }

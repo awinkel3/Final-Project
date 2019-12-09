@@ -11,10 +11,17 @@ public class GetStock extends AsyncTask<String, String, Stock> {
 
     private MainActivity main;
     private int code;
+    private int sellNum = 0;
 
     GetStock(MainActivity startMain, int startCode) {
         main = startMain;
         code = startCode;
+    }
+    //Second constructor for when you need to know the number of stocks you are selling
+    GetStock(MainActivity startMain, int startCode, int startSellNum) {
+        main = startMain;
+        code = startCode;
+        sellNum = startSellNum;
     }
     @Override
     protected void onPreExecute() {
@@ -58,7 +65,7 @@ public class GetStock extends AsyncTask<String, String, Stock> {
         }
         //Set portfolio Iterator
         if (code == main.getSellCode()) {
-            main.setPortfolioIterator(result);
+            main.inflatePortStocks(result, sellNum);
         }
     }
 }
